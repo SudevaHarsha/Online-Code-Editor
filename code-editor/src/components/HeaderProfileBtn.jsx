@@ -4,6 +4,9 @@ import { User } from "lucide-react";
 import LoginButton from "./LoginButton";
 import { Link } from "react-router-dom";
 import { useUser } from "../context/UserContext";
+import { useFile } from "../context/UseFileContext";
+import { v4 as uuidv4 } from "uuid";
+import { LANGUAGE_CONFIG } from "../constants";
 
 function HeaderProfileBtn() {
   const auth = getAuth();
@@ -11,11 +14,19 @@ function HeaderProfileBtn() {
   const dropdownRef = useRef(null);
 
   const { user, setUser } = useUser();
-  console.log(user);
+  const { setFile } = useFile();
 
   const handleSignOut = () => {
     signOut(auth);
     setUser(null);
+    const newFile = {
+      fileName: `untitled-${uuidv4().slice(0, 8)}`,
+      code: LANGUAGE_CONFIG["javascript"].defaultCode,
+      language: "javascript",
+      codeId: uuidv4(),
+      userId: user._id,
+    };
+    setFile(newFile);
   }
 
   // Close dropdown when clicking outside

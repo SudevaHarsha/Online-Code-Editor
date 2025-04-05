@@ -169,7 +169,14 @@ function EditorPanel() {
 
   useEffect(() => {
     const handleBeforeUnload = () => {
-      localStorage.removeItem("yourStateKey"); // replace with your key
+      const newFile = {
+        fileName: `untitled-${uuidv4().slice(0, 8)}`,
+        code: LANGUAGE_CONFIG[language].defaultCode,
+        language: language,
+        codeId: uuidv4(),
+        userId: user._id,
+      };
+      setFile(newFile);
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
