@@ -59,7 +59,7 @@ function EditorPanel() {
       return;
     }
     if (editor) {
-      if (file?.fileName && !file.fileName.startsWith("untitled") && file?.codeId) {
+      if (file?.fileName && file?.codeId) {
         // Call save-code route
         const currentCode = getCode();
         try {
@@ -146,7 +146,7 @@ function EditorPanel() {
       fileName: `untitled-${uuidv4().slice(0, 8)}`,
       code: LANGUAGE_CONFIG[language].defaultCode,
       language: language,
-      codeId: uuidv4(),
+      codeId: null,
       userId: user._id,
     };
     setFile(newFile);
@@ -173,7 +173,7 @@ function EditorPanel() {
         fileName: `untitled-${uuidv4().slice(0, 8)}`,
         code: LANGUAGE_CONFIG[language].defaultCode,
         language: language,
-        codeId: uuidv4(),
+        codeId: null,
         userId: user._id,
       };
       setFile(newFile);

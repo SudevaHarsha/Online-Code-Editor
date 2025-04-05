@@ -19,7 +19,7 @@ function RunButton() {
       navigate("/sign-in");
       return;
     }
-    if (file?.fileName && file.fileName.startsWith("untitled")) {
+    if (file?.fileName && file?.codeID) {
       setIsModalOpen(true);
     }
     await runCode();
