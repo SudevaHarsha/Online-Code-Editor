@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useFile } from "../context/UseFileContext";
 import SaveCode from "../helpers/SaveCode";
 import { CreateCodeFile } from "../helpers/CreateCodeFile";
+import { useNavigate } from "react-router-dom";
 
 function EditorPanel() {
 
@@ -20,7 +21,7 @@ function EditorPanel() {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
 
-  /* const [isModalOpen, setIsModalOpen] = useState(false); */
+  const navigate = useNavigate();
 
   console.log(language, theme, fontSize);
 
@@ -53,13 +54,17 @@ function EditorPanel() {
   };
 
   const handleSave = async () => {
+    if (!user) {
+      navigate("/sign-in");
+      return;
+    }
     if (editor) {
       if (file?.fileName && !file.fileName.startsWith("untitled") && file?.codeId) {
         // Call save-code route
         const currentCode = getCode();
         try {
           const response = await fetch(
-            `http://localhost:5000/api/files/save-code/${file?._id}`,
+            `https://online-code-editor-dmo6.onrender.com/api/files/save-code/${file?._id}`,
             {
               // Replace with your actual save-code route
               method: "POST",
@@ -94,12 +99,16 @@ function EditorPanel() {
   };
 
   const handleModalSave = async () => {
+    if (!user) {
+      navigate("/sign-in");
+      return;
+    }
     if (file.fileName.trim()) {
       const currentCode = editor.getValue();
       const id = uuidv4();
       try {
         const response = await fetch(
-          "http://localhost:5000/api/files/create-file",
+          "https://online-code-editor-dmo6.onrender.com/api/files/create-file",
           {
             // Replace with your actual create-file route
             method: "POST",
@@ -162,13 +171,13 @@ function EditorPanel() {
     const handleBeforeUnload = () => {
       localStorage.removeItem("yourStateKey"); // replace with your key
     };
-  
+
     window.addEventListener("beforeunload", handleBeforeUnload);
-  
+
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, []);  
+  }, []);
 
   /* 
     useEffect(() => {
@@ -220,13 +229,13 @@ function EditorPanel() {
           <div className="flex items-center gap-3">
             {/* Save Button */}
             <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleCreateNewFile}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg overflow-hidden bg-[#1e1e2e] hover:bg-[#2a2a3a] ring-1 ring-white/5 transition-colors"
-          >
-            <PlusIcon className="size-4 text-gray-400" />
-          </motion.button>
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleCreateNewFile}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg overflow-hidden bg-[#1e1e2e] hover:bg-[#2a2a3a] ring-1 ring-white/5 transition-colors"
+            >
+              <PlusIcon className="size-4 text-gray-400" />
+            </motion.button>
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}

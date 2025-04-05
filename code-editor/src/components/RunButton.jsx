@@ -5,14 +5,21 @@ import { useCodeEditorContext } from "../context/CodeEditorContext";
 import SaveCode from "../helpers/SaveCode";
 import { useFile } from "../context/UseFileContext";
 import { CreateCodeFile } from "../helpers/CreateCodeFile";
+import { useUser } from "../context/UserContext";
+import { useNavigate } from "react-router-dom";
 
 function RunButton() {
   const { runCode, language, isRunning, executionResult } = useCodeEditorContext();
-  const {file, setIsModalOpen} = useFile();
-
+  const { file, setIsModalOpen } = useFile();
+  const { user } = useUser();
+  const navigate = useNavigate();
 
   const handleRun = async () => {
-    if(file?.fileName && file.fileName.startsWith("untitled")) {
+    if (!user) {
+      navigate("/sign-in");
+      return;
+    }
+    if (file?.fileName && file.fileName.startsWith("untitled")) {
       setIsModalOpen(true);
     }
     await runCode();
