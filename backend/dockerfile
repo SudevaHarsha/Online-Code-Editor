@@ -1,0 +1,22 @@
+FROM node:18-slim
+
+# Install only necessary languages/tools
+RUN apt-get update && apt-get install -y \
+    python3 \
+    ruby \
+    default-jdk \
+    golang \
+    rustc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Only install what you need — no ts-node / typescript anymore
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . ./
+
+CMD ["node", "index.js"]
