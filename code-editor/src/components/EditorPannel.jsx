@@ -259,7 +259,7 @@ function EditorPanel() {
               whileTap={{ scale: 0.98 }}
               onClick={() => {
                 if (file?.codeId) {
-                  const url = `${window.location.origin}/editor/${file.codeId}`;
+                  const url = `https://online-code-editor-1-s122.onrender.com/editor/${file.codeId}`;
                   setShareUrl(url);
                   setShowShareDialog(true);
                 } else {
