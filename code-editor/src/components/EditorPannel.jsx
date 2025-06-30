@@ -13,7 +13,10 @@ import { useNavigate } from "react-router-dom";
 
 function EditorPanel() {
 
-  const { language, theme, fontSize, editor, setFontSize, setEditor, getCode } = useCodeEditorContext();
+  const { language, theme, fontSize, editor, setFontSize, setEditor, getCode, isRunning, // Current running status from context
+        terminalRef, // The ref for the terminal's DOM element
+        termInstanceRef, // The Xterm.js Terminal instance (for clearing)
+        wsRef } = useCodeEditorContext();
   const { file, setFile, isModalOpen, setIsModalOpen } = useFile();
   const { user } = useUser();
 
@@ -40,6 +43,18 @@ function EditorPanel() {
     const defaultCode = LANGUAGE_CONFIG[language].defaultCode;
     if (editor) editor.setValue(defaultCode);
     localStorage.removeItem(`editor-code-${language}`);
+    setIsSaved(true); // Resetting to default is considered "saved"
+    setFile({}); // Reset file context
+
+    // Clear terminal content if instance exists
+    if (termInstanceRef?.current) {
+        termInstanceRef?.current.reset();
+        termInstanceRef?.current.write('Terminal cleared. Code reset to default.\r\n\r\n');
+    }
+    // Close WebSocket connection if active
+    if (wsRef?.current && wsRef?.current.readyState === WebSocket.OPEN) {
+        wsRef.current.close();
+    }
   };
 
   const handleEditorChange = (value) => {
@@ -64,7 +79,7 @@ function EditorPanel() {
         const currentCode = getCode();
         try {
           const response = await fetch(
-            `https://online-code-editor-dmo6.onrender.com/api/files/save-code/${file?._id}`,
+            `http://localhost:5000/api/files/save-code/${file?._id}`,
             {
               // Replace with your actual save-code route
               method: "POST",
@@ -108,7 +123,7 @@ function EditorPanel() {
       const id = uuidv4();
       try {
         const response = await fetch(
-          "https://online-code-editor-dmo6.onrender.com/api/files/create-file",
+          "http://localhost:5000/api/files/create-file",
           {
             // Replace with your actual create-file route
             method: "POST",
@@ -167,7 +182,7 @@ function EditorPanel() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isSaved]);
 
-  useEffect(() => {
+  /* useEffect(() => {
     const handleBeforeUnload = () => {
       const newFile = {
         fileName: `untitled-${uuidv4().slice(0, 8)}`,
@@ -184,7 +199,7 @@ function EditorPanel() {
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, []);
+  }, [isSaved]); */
 
   /* 
     useEffect(() => {
@@ -259,7 +274,7 @@ function EditorPanel() {
               whileTap={{ scale: 0.98 }}
               onClick={() => {
                 if (file?.codeId) {
-                  const url = `https://online-code-editor-1-s122.onrender.com/editor/${file.codeId}`;
+                  const url = `http://localhost:3000/editor/${file.codeId}`;
                   setShareUrl(url);
                   setShowShareDialog(true);
                 } else {
@@ -274,7 +289,7 @@ function EditorPanel() {
           </div>
         </div>
 
-        {/* Editor  */}
+        {/*
         <div className="relative group rounded-xl overflow-hidden ring-1 ring-white/[0.05]">
           {true && (
             <Editor
@@ -309,7 +324,46 @@ function EditorPanel() {
           )}
 
         </div>
+      </div> */}
+      {/* Editor and Terminal Container */}
+      <div className="flex flex-col lg:flex-row gap-6 flex-grow">
+          {/* Editor */}
+          <div className="relative group rounded-xl overflow-hidden ring-1 ring-white/[0.05] flex-1">
+              <Editor
+                  height="600px" // Fixed height for the editor
+                  language={LANGUAGE_CONFIG[language].monacoLanguage}
+                  onChange={handleEditorChange}
+                  theme={theme}
+                  beforeMount={defineMonacoThemes}
+                  onMount={(monacoEditor) => setEditor(monacoEditor)} // Set editor instance in context
+                  options={{
+                      minimap: { enabled: false },
+                      fontSize,
+                      automaticLayout: true,
+                      scrollBeyondLastLine: false,
+                      padding: { top: 16, bottom: 16 },
+                      renderWhitespace: "selection",
+                      fontFamily: '"Fira Code", "Cascadia Code", Consolas, monospace',
+                      fontLigatures: true,
+                      cursorBlinking: "smooth",
+                      smoothScrolling: true,
+                      contextmenu: true,
+                      renderLineHighlight: "all",
+                      lineHeight: 1.6,
+                      letterSpacing: 0.5,
+                      roundedSelection: true,
+                      scrollbar: {
+                          verticalScrollbarSize: 8,
+                          horizontalScrollbarSize: 8,
+                      },
+                  }}
+              />
+          </div>
+
+          {/* Terminal */}
+          
       </div>
+  </div>
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-30">
           <div className="bg-[#1e1e2e] p-6 rounded-lg ring-1 ring-white/5">

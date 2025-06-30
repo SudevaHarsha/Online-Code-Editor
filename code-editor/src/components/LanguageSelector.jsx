@@ -3,11 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDownIcon, Lock, Sparkles } from "lucide-react";
 import { LANGUAGE_CONFIG } from "../constants";
 import { useCodeEditorContext } from "../context/CodeEditorContext";
+import { useFile } from "../context/UseFileContext";
 
 function LanguageSelector() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const { language, setLanguage } = useCodeEditorContext();
+  const { setFile } = useFile();
   const currentLanguageObj = LANGUAGE_CONFIG[language]; // Default language
 
   useEffect(() => {
@@ -27,6 +29,7 @@ function LanguageSelector() {
 
     setLanguage(langId);
     setIsOpen(false);
+    /* setFile({}); */
   };
 
   return (
@@ -38,7 +41,7 @@ function LanguageSelector() {
         className={`group relative flex items-center gap-3 px-4 py-2.5 bg-[#1e1e2e]/80 
       rounded-lg transition-all 
        duration-200 border border-gray-800/50 hover:border-gray-700
-       ${language !== "javascript" ? "opacity-50 cursor-not-allowed" : ""}`}
+       ${false ? "opacity-50 cursor-not-allowed" : ""}`}
       >
         {/* Decoration */}
         <div
@@ -83,7 +86,7 @@ function LanguageSelector() {
 
             <div className="max-h-[280px] overflow-y-auto overflow-x-hidden">
               {Object.values(LANGUAGE_CONFIG).map((lang, index) => {
-                const isLocked =  lang.id !== "javascript";
+                const isLocked =  false;
 
                 return (
                   <motion.div

@@ -1,22 +1,25 @@
-FROM node:18-slim
+FROM node:20-slim 
 
-# Install only necessary languages/tools
+# Install necessary languages/tools and build essentials
 RUN apt-get update && apt-get install -y \
     python3 \
     ruby \
     default-jdk \
     golang \
     rustc \
-    g++ \
+    build-essential \
+    libsecret-1-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# Only install what you need — no ts-node / typescript anymore
 WORKDIR /app
 
 COPY package*.json ./
 
+# IMPORTANT: Force a clean npm install with the new Node.js version
 RUN npm install
 
 COPY . ./
+
+RUN npm rebuild node-pty
 
 CMD ["node", "index.js"]

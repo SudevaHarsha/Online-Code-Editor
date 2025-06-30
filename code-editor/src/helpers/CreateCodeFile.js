@@ -13,7 +13,7 @@ export const CreateCodeFile = async () => {
   const id = uuidv4();
   try {
     const response = await fetch(
-      "https://online-code-editor-dmo6.onrender.com/api/files/create-file",
+      "http://localhost:5000/api/files/create-file",
       {
         // Replace with your actual create-file route
         method: "POST",

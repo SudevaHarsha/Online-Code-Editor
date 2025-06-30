@@ -8,6 +8,7 @@ import SnippetsPage from "./pages/SnippetsPage";
 import EditorPage from "./pages/EditorPage";
 import SignInPage from "./components/Auth/SignIn";
 import SignUpPage from "./components/Auth/SignUp";
+import 'xterm/css/xterm.css';
 
 function App() {
   return (

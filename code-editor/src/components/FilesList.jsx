@@ -35,7 +35,7 @@ const FilesListPage = () => {
 
     const auth = getAuth();
     const { user } = useUser();
-    const { setTheme, setLanguage, theme } = useCodeEditorContext();
+    const { setTheme, setLanguage, theme, termInstanceRef } = useCodeEditorContext();
     const { setFile } = useFile();
 
     useEffect(() => {
@@ -48,7 +48,7 @@ const FilesListPage = () => {
         const fetchFiles = async () => {
             try {
                 setLoading(true);
-                const response = await fetch(`https://online-code-editor-dmo6.onrender.com/api/files/${user._id}`, {
+                const response = await fetch(`http://localhost:5000/api/files/${user._id}`, {
                     method: "GET",
                     headers: { Authorization: `user?.token` },
                 });
@@ -88,6 +88,7 @@ const FilesListPage = () => {
         setLanguage(file?.language);
         setFile(file);
         if (file?.code) localStorage.setItem(`editor-code-${file.language}`, file?.code);
+
         navigate(`/`, { state: { code: file.code } });
     };
 
@@ -228,8 +229,8 @@ const FilesListPage = () => {
                             </div>
                             <div className="flex items-center justify-between w-[40%]">
                                 <div className="flex items-center gap-3 text-sm text-gray-400 text-left w-[60%]">
-                                    📅 {formatDate(file.updatedAt)} 
-                                    </div>
+                                    📅 {formatDate(file.updatedAt)}
+                                </div>
                                 <div className="text-blue-400 font-mono text-left text-sm w-[30%]">{file.language.toUpperCase()}</div>
                                 <Download
                                     size={18}

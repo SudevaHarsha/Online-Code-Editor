@@ -15,10 +15,6 @@ function RunButton() {
   const navigate = useNavigate();
 
   const handleRun = async () => {
-    if (!user) {
-      navigate("/sign-in");
-      return;
-    }
     if (file?.fileName && file?.codeID) {
       setIsModalOpen(true);
     }

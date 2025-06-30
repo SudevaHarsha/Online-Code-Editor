@@ -1,6 +1,9 @@
 import { spawn } from "child_process";
 import fs from "fs/promises";
 import path from "path";
+import os from "os";
+import { v4 as uuidv4 } from "uuid";
+import * as pty from "node-pty";
 import FileModel from "../models/fileModel.js";
 
 export const executeCode = async (req, res) => {
@@ -180,7 +183,7 @@ export const executeCode = async (req, res) => {
   }
 };
 
-// Helper: compile and wait
+/* // Helper: compile and wait
 const compileAndWait = (command, args, cwd) => {
   return new Promise((resolve, reject) => {
     const compile = spawn(command, args, { cwd });
@@ -206,22 +209,301 @@ const spawnAndGetStderr = (command, args, cwd) => {
       resolve(code !== 0 ? errorText.trim() : null);
     });
   });
+}; */
+
+function detectInteractivity(language, code) {
+  const patterns = {
+    python: /\binput\s*\(|eval\s*\(\s*input\s*\(/i,
+    java: /\bnew\s+Scanner\s*\(\s*System\.in\s*\)/i,
+    c: /\bscanf\s*\(/i,
+    cpp: /\b(cin\s*>>|scanf\s*\()/i,
+    "c++": /\b(cin\s*>>|scanf\s*\()/i,
+    javascript:
+      /\b(readlineSync\s*\.question\s*\(|require\s*\(\s*['"]readline-sync['"]\s*\)|readline\s*\.createInterface\s*\(|prompt\s*\()/i,
+    typescript: /\breadlineSync\s*\.question\s*\(/i,
+    ruby: /\bgets\b/i,
+    go: /\bfmt\.Scan|bufio\.NewReader\(os\.Stdin\)/i,
+    csharp: /\bConsole\.Read(Line)?\s*\(/i,
+    swift: /\breadLine\s*\(/i,
+    rust: /\bio::stdin|read_line\s*\(/i,
+  };
+
+  const pattern = patterns[language.toLowerCase()];
+  if (language === "java") {
+    // Java requires a specific class name for Scanner
+    return true;
+  }
+  return pattern ? pattern.test(code) : false;
+}
+
+export const startInteractiveSession = async (req, res) => {
+  const activeSessions = req.activeSessions;
+  const outputBuffers = req.outputBuffers;
+  const clientSockets = req.clientSockets;
+  const userId = req.userId;
+  let { language, code } = req.body;
+
+  if (!language || !code) {
+    return res.status(400).json({ error: "Language and code are required." });
+  }
+
+  const sessionId = uuidv4();
+  const tempDir = path.join("/app/temp", sessionId);
+
+  try {
+    await fs.mkdir(tempDir, { recursive: true });
+  } catch (mkdirError) {
+    console.error(`Error creating temporary directory ${tempDir}:`, mkdirError);
+    return res
+      .status(500)
+      .json({ error: "Failed to create temporary directory." });
+  }
+
+  let needsCompilation = false;
+  let compilationCommand = "";
+  let compilationArgs = [];
+  let executableCommand = "";
+  let executableArgs = [];
+  let className, binaryName;
+
+  if (language === "python") {
+    // naive approach to add flush=True
+    code = code.replace(/print\((.*)\)/g, "print($1, flush=True)");
+  }
+
+  try {
+    switch (language) {
+      case "javascript":
+        const jsFileName = `main_${sessionId}.js`;
+        const jsFilePath = path.join(tempDir, jsFileName); // ✅ FIXED
+        await fs.writeFile(jsFilePath, code);
+        executableCommand = "node";
+        executableArgs = [jsFilePath]; // ✅ FIXED
+        break;
+
+      case "typescript":
+        const tsFileName = `main_${sessionId}.ts`;
+        const tsFilePath = path.join(tempDir, tsFileName); // ✅ FIXED
+        await fs.writeFile(tsFilePath, code);
+        executableCommand = "ts-node";
+        executableArgs = [tsFilePath]; // ✅ FIXED
+        break;
+
+      case "python":
+        const pyFileName = `main_${sessionId}.py`;
+        const pyFilePath = path.join(tempDir, pyFileName); // ✅ FIXED
+        await fs.writeFile(pyFilePath, code);
+        executableCommand = "python3";
+        executableArgs = ["-u", pyFilePath]; // ✅ FIXED
+        break;
+
+      case "csharp":
+        needsCompilation = true;
+        const csFileName = `Main_${sessionId}.cs`;
+        await fs.writeFile(path.join(tempDir, csFileName), code);
+        compilationCommand = "dotnet";
+        compilationArgs = ["build", tempDir, "-o", "."];
+        executableCommand = "dotnet";
+        executableArgs = ["run", "--project", tempDir];
+        break;
+
+      case "java":
+        needsCompilation = true;
+        className = "Main";
+        const javaFileName = `${className}.java`;
+        await fs.writeFile(path.join(tempDir, javaFileName), code);
+        compilationCommand = "javac";
+        compilationArgs = [javaFileName];
+        executableCommand = "java";
+        executableArgs = [className];
+        break;
+
+      case "ruby":
+        const rbFileName = `main_${sessionId}.rb`;
+        const rbFilePath = path.join(tempDir, rbFileName); // ✅ FIXED
+        await fs.writeFile(rbFilePath, code);
+        executableCommand = "ruby";
+        executableArgs = [rbFilePath]; // ✅ FIXED
+        break;
+
+      case "swift":
+        needsCompilation = true;
+        const swiftFileName = `main_${sessionId}.swift`;
+        binaryName = `main_${sessionId}`;
+        await fs.writeFile(path.join(tempDir, swiftFileName), code);
+        compilationCommand = "swiftc";
+        compilationArgs = [swiftFileName, "-o", binaryName];
+        executableCommand = `./${binaryName}`;
+        break;
+
+      case "go":
+        const goFileName = `main_${sessionId}.go`;
+        const goFilePath = path.join(tempDir, goFileName); // ✅ FIXED
+        await fs.writeFile(goFilePath, code);
+        executableCommand = "go";
+        executableArgs = ["run", goFilePath]; // ✅ FIXED
+        break;
+
+      case "rust":
+        needsCompilation = true;
+        const rsFileName = `main_${sessionId}.rs`;
+        binaryName = `main_${sessionId}`;
+        await fs.writeFile(path.join(tempDir, rsFileName), code);
+        compilationCommand = "rustc";
+        compilationArgs = [rsFileName, "-o", binaryName];
+        executableCommand = `./${binaryName}`;
+        break;
+
+      case "cpp":
+      case "c++":
+        needsCompilation = true;
+        const cppFileName = `main_${sessionId}.cpp`;
+        binaryName = `main_${sessionId}`;
+        await fs.writeFile(path.join(tempDir, cppFileName), code);
+        compilationCommand = "g++";
+        compilationArgs = [cppFileName, "-o", binaryName];
+        // ✅ Fix: wrap binary with stdbuf for unbuffered output
+        executableCommand = "stdbuf"; // ✅ ADDED
+        executableArgs = ["-oL", `./${binaryName}`]; // ✅ ADDED
+        break;
+
+      case "c":
+        needsCompilation = true;
+        const cFileName = `main_${sessionId}.c`;
+        binaryName = `main_${sessionId}`;
+        await fs.writeFile(path.join(tempDir, cFileName), code);
+        compilationCommand = "gcc";
+        compilationArgs = [cFileName, "-o", binaryName];
+        executableCommand = `./${binaryName}`;
+        break;
+
+      default:
+        await fs.rm(tempDir, { recursive: true, force: true });
+        return res.status(400).json({ error: "Language not supported." });
+    }
+
+    if (needsCompilation) {
+      await new Promise((resolve, reject) => {
+        const compileProc = spawn(compilationCommand, compilationArgs, {
+          cwd: tempDir,
+        });
+
+        let compileErrors = "";
+        compileProc.stderr.on("data", (data) => {
+          compileErrors += data.toString();
+        });
+
+        compileProc.on("close", (code) => {
+          if (code !== 0) {
+            reject(
+              new Error(
+                `Compilation failed (exit code ${code}):\n${compileErrors}`
+              )
+            );
+          } else {
+            resolve();
+          }
+        });
+
+        compileProc.on("error", (err) => {
+          reject(new Error(`Compilation error: ${err.message}`));
+        });
+      });
+    }
+
+    const isInteractive = detectInteractivity(language, code);
+
+    console.log(
+      `[${sessionId}] Detected ${
+        isInteractive ? "interactive" : "non-interactive"
+      } mode`
+    );
+
+    if (
+      executableCommand.startsWith("./") &&
+      !path.isAbsolute(executableCommand)
+    ) {
+      executableCommand = path.join(tempDir, executableCommand.slice(2));
+    }
+
+    const term = pty.spawn(executableCommand, executableArgs, {
+      name: "xterm-color",
+      cols: 80,
+      rows: 30,
+      cwd: tempDir,
+      env: process.env,
+    });
+
+    activeSessions.set(sessionId, term);
+
+    term.onData((data) => {
+      console.log(`[${sessionId}] PTY output:`, data); // <-- ADD THIS
+      outputBuffers.set(sessionId, (outputBuffers.get(sessionId) || "") + data);
+    });
+
+    term.onExit(() => {
+      console.log(`🚪 Terminal session ended for ${sessionId}`);
+      const ws = clientSockets.get(sessionId);
+      ws.close();
+      /* term.kill(); // Clean up the pty */
+      activeSessions.delete(sessionId);
+      fs.rm(tempDir, { recursive: true, force: true }).catch((err) =>
+        console.error(`Failed to clean up temp directory ${tempDir}`, err)
+      );
+    });
+    return res.status(200).json({ sessionId });
+  } catch (error) {
+    console.error("Error starting session:", error);
+    await fs
+      .rm(tempDir, { recursive: true, force: true })
+      .catch((err) => console.error("Cleanup error after failure:", err));
+    return res
+      .status(500)
+      .json({ error: error.message || "Internal server error" });
+  }
 };
 
-/* export const getUserSnippets = async (req, res) => {
-    const userId = req.userId;
+// Your existing helper functions (compileAndWait, spawnAndGetStderr)
+// These do not use pty, so they remain unchanged.
+const compileAndWait = (command, args, cwd) => {
+  return new Promise((resolve, reject) => {
+    const compile = spawn(command, args, { cwd });
+    let stderrData = "";
+    compile.stderr.on("data", (data) => {
+      stderrData += data.toString();
+      console.error(`${command} compile error:`, data.toString());
+    });
+    compile.on("close", (code) => {
+      if (code !== 0) {
+        reject(
+          new Error(
+            `${command} compilation failed (exit code ${code}):\n${stderrData.trim()}`
+          )
+        );
+      } else resolve();
+    });
+    compile.on("error", (err) => {
+      reject(new Error(`Compilation process spawning error: ${err.message}`));
+    });
+  });
+};
 
-    if (userId !== req.params.userId) {
-        return res.status(403).json({ error: 'Forbidden' });
-    }
-
-    try {
-        const snippets = await FileModel.find({ userId: userId });
-        res.json(snippets);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-}; */
+const spawnAndGetStderr = (command, args, cwd) => {
+  return new Promise((resolve) => {
+    const proc = spawn(command, args, { cwd });
+    let errorText = "";
+    proc.stderr.on("data", (data) => {
+      errorText += data.toString();
+    });
+    proc.on("close", (code) => {
+      resolve(code !== 0 ? errorText.trim() : null);
+    });
+    proc.on("error", (err) => {
+      console.error(`SpawnAndGetStderr error for ${command}:`, err);
+      resolve(`Process error: ${err.message}`);
+    });
+  });
+};
 
 export const createFile = async (req, res) => {
   const { userId, codeId, code, input = "", fileName, language } = req.body;

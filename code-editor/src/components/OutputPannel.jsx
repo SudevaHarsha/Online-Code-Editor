@@ -1,13 +1,39 @@
 "use client";
 
 import { AlertTriangle, CheckCircle, Clock, Copy, Terminal } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import RunningCodeSkeleton from "../skeletons/RunningCodeSkeleton";
 import { useCodeEditorContext } from "../context/CodeEditorContext";
+import { useTerminal } from "../hooks/useTerminal";
+import { useUser } from "../context/UserContext";
 
 function OutputPanel() {
-    const { output, error, isRunning } = useCodeEditorContext();
+    const { output, error, isRunning, language, code, terminalRef } = useCodeEditorContext();
+    const { user } = useUser();
     const [isCopied, setIsCopied] = useState(false);
+/*     const { initializeTerminal } = useTerminal(language, user);
+
+    useEffect(() => {
+        initializeTerminal();
+    }, [code]); */
+
+    /*  const {
+         terminalRef,
+         termInstanceRef,
+         runTerminalSession,
+         initializeTerminal,
+     } = useTerminal(language, user);
+ 
+     // Call on mount
+     useEffect(() => {
+         initializeTerminal();
+     }, []);
+ 
+     useEffect(() => {
+         if (code) {
+             runTerminalSession(code, language);
+         }
+     }, [code, language]); */
 
     const hasContent = error || output;
 
@@ -19,9 +45,8 @@ function OutputPanel() {
         setTimeout(() => setIsCopied(false), 2000);
     };
 
-    return (
-        <div className="relative bg-[#181825] rounded-xl p-4 ring-1 ring-gray-800/50">
-            {/* Header */}
+    return <>
+        {/* <div className="relative bg-[#181825] rounded-xl p-4 ring-1 ring-gray-800/50">
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                     <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-[#1e1e2e] ring-1 ring-gray-800/50">
@@ -50,7 +75,6 @@ function OutputPanel() {
                 )}
             </div>
 
-            {/* Output Area */}
             <div className="relative">
                 <div className="relative bg-[#1e1e2e]/50 backdrop-blur-sm border border-[#313244] rounded-xl p-4 h-[600px] overflow-auto font-mono text-sm">
                     {isRunning ? (
@@ -81,8 +105,22 @@ function OutputPanel() {
                     )}
                 </div>
             </div>
+        </div> */}
+        <div id="terminal-container" className="flex-1 flex flex-col rounded-xl overflow-hidden ring-1 ring-white/[0.05] bg-[#1e1e2e]">
+            {/* Terminal Status Text */}
+            <p className="p-3 text-sm font-medium text-gray-400 bg-[#2a2a3a] border-b border-white/[0.05] text-center">
+                Terminal Status: {isRunning ? 'Running Code...' : 'Idle'}
+            </p>
+            {/* The div where Xterm.js will render */}
+            <div
+                ref={terminalRef} // Attach the terminalRef (from CodeEditorContext) here
+                className="flex-1 p-3 h-[100%] min-h-[200px] min-w-[300px]"
+                style={{ overflow: 'hidden' }}
+            >
+                {/* Xterm.js content will be dynamically inserted here */}
+            </div>
         </div>
-    );
+    </>
 }
 
 export default OutputPanel;
