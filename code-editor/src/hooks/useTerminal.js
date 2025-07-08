@@ -77,7 +77,7 @@ export const useTerminal = ({ language, user }) => {
     }
 
     try {
-      const response = await fetch("https://online-code-editor-dmo6.onrender.com/api/start-terminal-session", {
+      const response = await fetch("https://online-code-editor-backend-3ehb.onrender.com/api/start-terminal-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

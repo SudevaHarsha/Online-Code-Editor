@@ -48,7 +48,7 @@ const FilesListPage = () => {
         const fetchFiles = async () => {
             try {
                 setLoading(true);
-                const response = await fetch(`https://online-code-editor-dmo6.onrender.com/api/files/${user._id}`, {
+                const response = await fetch(`https://online-code-editor-backend-3ehb.onrender.com/api/files/${user._id}`, {
                     method: "GET",
                     headers: { Authorization: `user?.token` },
                 });
