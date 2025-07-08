@@ -151,7 +151,7 @@ export const useCodeEditor = () => {
 
     
     try {
-      const response = await fetch("http://localhost:5000/api/execute", {
+      const response = await fetch("https://online-code-editor-dmo6.onrender.com/api/execute", {
         // Replace with your backend URL
         method: "POST",
         headers: {
@@ -221,7 +221,7 @@ export const useCodeEditor = () => {
     try {
       // Step 1: Request a new session ID from the backend via HTTP POST
       const response = await fetch(
-        "http://localhost:5000/api/start-terminal-session",
+        "https://online-code-editor-dmo6.onrender.com/api/start-terminal-session",
         {
           method: "POST",
           headers: {
@@ -583,7 +583,7 @@ export const useCodeEditor = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/start-terminal-session",
+        "https://online-code-editor-dmo6.onrender.com/api/start-terminal-session",
         {
           method: "POST",
           headers: {

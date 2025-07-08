@@ -12,7 +12,7 @@ const SaveCode = async () => {
   const currentCode = getCode();
   try {
     const response = await fetch(
-      `http://localhost:5000/api/files/save-code/${file?._id}`,
+      `https://online-code-editor-dmo6.onrender.com/api/files/save-code/${file?._id}`,
       {
         // Replace with your actual save-code route
         method: "POST",

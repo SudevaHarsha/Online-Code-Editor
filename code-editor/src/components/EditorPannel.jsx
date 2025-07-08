@@ -79,7 +79,7 @@ function EditorPanel() {
         const currentCode = getCode();
         try {
           const response = await fetch(
-            `http://localhost:5000/api/files/save-code/${file?._id}`,
+            `https://online-code-editor-dmo6.onrender.com/api/files/save-code/${file?._id}`,
             {
               // Replace with your actual save-code route
               method: "POST",
@@ -123,7 +123,7 @@ function EditorPanel() {
       const id = uuidv4();
       try {
         const response = await fetch(
-          "http://localhost:5000/api/files/create-file",
+          "https://online-code-editor-dmo6.onrender.com/api/files/create-file",
           {
             // Replace with your actual create-file route
             method: "POST",
