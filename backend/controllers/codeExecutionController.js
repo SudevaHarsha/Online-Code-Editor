@@ -444,7 +444,9 @@ export const startInteractiveSession = async (req, res) => {
     term.onExit(() => {
       console.log(`🚪 Terminal session ended for ${sessionId}`);
       const ws = clientSockets.get(sessionId);
-      ws.close();
+      if (ws && ws.readyState === ws.OPEN) {
+        ws.close();
+      }
       /* term.kill(); // Clean up the pty */
       activeSessions.delete(sessionId);
       fs.rm(tempDir, { recursive: true, force: true }).catch((err) =>

@@ -30,7 +30,7 @@ export const connectWebSocket = (
   closeWebSocket();
 
   console.log(`Attempting to connect WebSocket for session: ${sessionId}`);
-  ws = new WebSocket(`ws://localhost:5000/terminal?sessionId=${sessionId}`);
+  ws = new WebSocket(`https://online-code-editor-backend-3ehb.onrender.com/terminal?sessionId=${sessionId}`);
 
   onOpenCallback = onOpen;
   onMessageCallback = onMessage;
