@@ -174,6 +174,9 @@ wss.on("connection", (ws, req) => {
         JSON.stringify({ type: "status", message: "[Session already ended]" })
       );
       ws.close();
+      console.log(
+        `🚪 WebSocket explicitly closed after sending buffered output for session ${sessionId}`
+      );
     }
   } else {
     console.warn(`❌ No active or buffered session found for ${sessionId}`);
