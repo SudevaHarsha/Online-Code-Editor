@@ -66,7 +66,7 @@ function EditorPanel() {
 
   const handleEditorChange = (value) => {
     if (value) localStorage.setItem(`editor-code-${language}`, value);
-    updateFile({...file, code : value});
+    /* updateFile({ ...file, code: value }); */
     setIsSaved(false);
   };
 
