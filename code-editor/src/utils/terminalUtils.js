@@ -73,6 +73,7 @@ export const disposeTerminal = (
 export const writeToTerminal = (termInstanceRef, data) => {
   if (termInstanceRef?.current) {
     termInstanceRef.current.write(data);
+    termInstanceRef.current?.scrollToBottom();
   } else {
     console.warn("terminalUtils: write failed, terminalInstanceRef is null.");
   }

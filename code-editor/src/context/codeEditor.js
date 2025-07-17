@@ -4,7 +4,6 @@ import { useUser } from "./UserContext";
 import { Terminal } from "xterm"; // Import Xterm.js
 import { FitAddon } from "xterm-addon-fit"; // Import FitAddon
 import { v4 as uuidv4 } from "uuid"; // Import uuid
-import { useFile } from "./UseFileContext";
 
 /* import {
   initializeTerminal,
@@ -54,7 +53,6 @@ const getInitialState = () => {
 
 export const useCodeEditor = () => {
   const initialState = getInitialState();
-  const { file } = useFile();
   const [language, setLanguage] = useState(initialState.language);
   const [theme, setTheme] = useState(initialState.theme);
   const [fontSize, setFontSize] = useState(initialState.fontSize);
@@ -730,10 +728,10 @@ export const useCodeEditor = () => {
         termInstanceRef,
         `Welcome to Online Runner for ${language.toUpperCase()}\r\n`
       );
-      writeToTerminal(
+/*       writeToTerminal(
         termInstanceRef,
         `File: ${file?.fileName || "Untitled"}\r\n`
-      );
+      ); */
       writeToTerminal(
         termInstanceRef,
         'Type code and click "Run Code" to start.\r\n'
@@ -752,7 +750,7 @@ export const useCodeEditor = () => {
       window.removeEventListener("resize", handleResize);
       console.log("Cleanup done.");
     };
-  }, [terminalRef.current, language, file?.codeId, file?.fileName]);
+  }, [terminalRef.current, language]);
 
   return {
     language,

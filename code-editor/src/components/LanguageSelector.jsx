@@ -8,8 +8,8 @@ import { useFile } from "../context/UseFileContext";
 function LanguageSelector() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const { language, setLanguage } = useCodeEditorContext();
-  const { setFile } = useFile();
+  const { language, setLanguage, getCode } = useCodeEditorContext();
+  const { changeLanguage } = useFile();
   const currentLanguageObj = LANGUAGE_CONFIG[language]; // Default language
 
   useEffect(() => {
@@ -27,8 +27,11 @@ function LanguageSelector() {
 
   const handleLanguageSelect = (langId) => {
 
+    const code = getCode()
+    changeLanguage(language, code, langId);
     setLanguage(langId);
     setIsOpen(false);
+
     /* setFile({}); */
   };
 
@@ -86,7 +89,7 @@ function LanguageSelector() {
 
             <div className="max-h-[280px] overflow-y-auto overflow-x-hidden">
               {Object.values(LANGUAGE_CONFIG).map((lang, index) => {
-                const isLocked =  false;
+                const isLocked = false;
 
                 return (
                   <motion.div
@@ -103,7 +106,7 @@ function LanguageSelector() {
                       ${isLocked ? "opacity-50" : "hover:bg-[#262637]"}
                     `}
                       onClick={() => handleLanguageSelect(lang.id)}
-                      
+
                     >
                       {/* decorator */}
                       <div

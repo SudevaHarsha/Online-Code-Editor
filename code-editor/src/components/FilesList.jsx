@@ -36,7 +36,7 @@ const FilesListPage = () => {
     const auth = getAuth();
     const { user } = useUser();
     const { setTheme, setLanguage, theme, termInstanceRef } = useCodeEditorContext();
-    const { setFile } = useFile();
+    const { openFile } = useFile();
 
     useEffect(() => {
         if (!user) {
@@ -86,9 +86,7 @@ const FilesListPage = () => {
     const handleFileClick = (file) => {
         setTheme(theme || "dark");
         setLanguage(file?.language);
-        setFile(file);
-        if (file?.code) localStorage.setItem(`editor-code-${file.language}`, file?.code);
-
+        openFile(file);
         navigate(`/`, { state: { code: file.code } });
     };
 

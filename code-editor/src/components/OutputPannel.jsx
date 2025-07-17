@@ -8,14 +8,14 @@ import { useTerminal } from "../hooks/useTerminal";
 import { useUser } from "../context/UserContext";
 
 function OutputPanel() {
-    const { output, error, isRunning, language, code, terminalRef } = useCodeEditorContext();
+    const { output, error, isRunning, code, terminalRef } = useCodeEditorContext();
     const { user } = useUser();
     const [isCopied, setIsCopied] = useState(false);
-/*     const { initializeTerminal } = useTerminal(language, user);
-
-    useEffect(() => {
-        initializeTerminal();
-    }, [code]); */
+    /*     const { initializeTerminal } = useTerminal(language, user);
+    
+        useEffect(() => {
+            initializeTerminal();
+        }, [code]); */
 
     /*  const {
          terminalRef,
@@ -106,16 +106,17 @@ function OutputPanel() {
                 </div>
             </div>
         </div> */}
-        <div id="terminal-container" className="flex-1 flex flex-col rounded-xl overflow-hidden ring-1 ring-white/[0.05] bg-[#1e1e2e]">
+        <div id="terminal-container"
+            className="flex flex-col flex-1 rounded-xl overflow-hidden ring-1 ring-white/[0.05] bg-[#1e1e2e]"
+        >
             {/* Terminal Status Text */}
             <p className="p-3 text-sm font-medium text-gray-400 bg-[#2a2a3a] border-b border-white/[0.05] text-center">
                 Terminal Status: {isRunning ? 'Running Code...' : 'Idle'}
             </p>
             {/* The div where Xterm.js will render */}
             <div
-                ref={terminalRef} // Attach the terminalRef (from CodeEditorContext) here
-                className="flex-1 p-3 h-[100%] min-h-[200px] min-w-[300px]"
-                style={{ overflow: 'hidden' }}
+                ref={terminalRef}
+                className="flex-1 w-full max-h-[600px] min-w-[300px] pt-3"
             >
                 {/* Xterm.js content will be dynamically inserted here */}
             </div>

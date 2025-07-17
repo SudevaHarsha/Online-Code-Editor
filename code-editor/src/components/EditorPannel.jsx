@@ -10,6 +10,7 @@ import { useFile } from "../context/UseFileContext";
 import SaveCode from "../helpers/SaveCode";
 import { CreateCodeFile } from "../helpers/CreateCodeFile";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "../context/ToastContext";
 
 function EditorPanel() {
 
@@ -17,22 +18,26 @@ function EditorPanel() {
         terminalRef, // The ref for the terminal's DOM element
         termInstanceRef, // The Xterm.js Terminal instance (for clearing)
         wsRef } = useCodeEditorContext();
-  const { file, setFile, isModalOpen, setIsModalOpen } = useFile();
+  const { file, setFile, isModalOpen, setIsModalOpen, handleCreateDefaultFile, updateFile, resetFile } = useFile();
   const { user } = useUser();
+  const { showToast } = useToast();
 
   const [isSaved, setIsSaved] = useState(true);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
+
+  const [fileName, setFileName] = useState();
 
   const navigate = useNavigate();
 
   console.log(language, theme, fontSize);
 
   useEffect(() => {
-    const savedCode = localStorage.getItem(`editor-code-${language}`);
-    const newCode = savedCode || LANGUAGE_CONFIG[language].defaultCode;
-    if (editor) editor.setValue(newCode);
-  }, [language, editor]);
+    /* const savedCode = localStorage.getItem(`editor-code-${language}`);
+    const newCode = savedCode || LANGUAGE_CONFIG[language].defaultCode; */
+    if (editor) editor.setValue(file?.code);
+    if(file) setFileName(file?.fileName || "untitled");
+  }, [language, editor, file]);
 
   useEffect(() => {
     const savedFontSize = localStorage.getItem("editor-font-size");
@@ -40,11 +45,13 @@ function EditorPanel() {
   }, [setFontSize]);
 
   const handleRefresh = () => {
-    const defaultCode = LANGUAGE_CONFIG[language].defaultCode;
+    /* const defaultCode = LANGUAGE_CONFIG[language].defaultCode;
     if (editor) editor.setValue(defaultCode);
-    localStorage.removeItem(`editor-code-${language}`);
+    localStorage.removeItem(`editor-code-${language}`); */
     setIsSaved(true); // Resetting to default is considered "saved"
-    setFile({}); // Reset file context
+    resetFile(language);
+    /* const defaultCode = LANGUAGE_CONFIG[language].defaultCode;
+    if (editor) editor.setValue(defaultCode); */
 
     // Clear terminal content if instance exists
     if (termInstanceRef?.current) {
@@ -59,6 +66,7 @@ function EditorPanel() {
 
   const handleEditorChange = (value) => {
     if (value) localStorage.setItem(`editor-code-${language}`, value);
+    updateFile({...file, code : value});
     setIsSaved(false);
   };
 
@@ -97,15 +105,15 @@ function EditorPanel() {
           );
           const modifiedFile = await response.json();
           if (response.ok) {
-            setFile(modifiedFile?.file);
+            updateFile(modifiedFile?.file);
             setIsSaved(true);
-            alert("Code Saved!");
+            showToast("Success code saved!", "success");
           } else {
-            alert("Failed to save code.");
+            showToast("Error in saving code!", "error")
           }
         } catch (error) {
           console.error("Error saving code:", error);
-          alert("An error occurred while saving.");
+          showToast("Error in saving code!", "error");
         }
       } else {
         setIsModalOpen(true);
@@ -131,7 +139,7 @@ function EditorPanel() {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              fileName: file?.fileName,
+              fileName: fileName,
               code: currentCode,
               language: language,
               userId: user._id,
@@ -143,21 +151,21 @@ function EditorPanel() {
           /* setFileName(filename); */
           const newFile = await response.json();
           setIsModalOpen(false);
-          setFile(newFile?.file);
+          updateFile(newFile?.file);
           setIsSaved(true);
-          alert("File created and code saved!");
+          showToast("File Created and code saved", "success");
         } else {
-          alert("Failed to create file.");
+          showToast("Failed to create file!", "error")
         }
       } catch (error) {
         console.error("Error creating file:", error);
-        alert("An error occurred while creating file.");
+        showToast("Error in creating file!", "error")
       }
     }
   };
 
   const handleCreateNewFile = () => {
-    const newFile = {
+/*     const newFile = {
       fileName: `untitled-${uuidv4().slice(0, 8)}`,
       code: LANGUAGE_CONFIG[language].defaultCode,
       language: language,
@@ -167,7 +175,9 @@ function EditorPanel() {
     setFile(newFile);
     if (editor) {
       editor.setValue(newFile.code);
-    }
+    } */
+    handleCreateDefaultFile(language);
+    showToast("New file is initialized", "success")
   };
 
   useEffect(() => {
@@ -326,7 +336,7 @@ function EditorPanel() {
         </div>
       </div> */}
       {/* Editor and Terminal Container */}
-      <div className="flex flex-col lg:flex-row gap-6 flex-grow">
+      <div className="flex flex-col lg:flex-row gap-6 flex-grow max-h-[100%]">
           {/* Editor */}
           <div className="relative group rounded-xl overflow-hidden ring-1 ring-white/[0.05] flex-1">
               <Editor
@@ -370,8 +380,8 @@ function EditorPanel() {
             <h2 className="text-lg font-semibold text-white mb-4">Enter Filename</h2>
             <input
               type="text"
-              value={file?.fileName}
-              onChange={(e) => setFile({ ...file, fileName: e.target.value })}
+              value={fileName}
+              onChange={(e) => setFileName(e.target.value)}
               className="w-full p-2 bg-[#2a2a3a] rounded-md text-white border border-gray-600 mb-4"
             />
             <div className="flex justify-end gap-3">

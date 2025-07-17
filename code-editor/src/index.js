@@ -7,19 +7,22 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { CodeEditorProvider } from "./context/CodeEditorContext";
 import { UserProvider } from "./context/UserContext";
 import { FileProvider } from "./context/UseFileContext";
+import { ToastProvider } from "./context/ToastContext";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-      <BrowserRouter>
-        <UserProvider>
+    <BrowserRouter>
+      <UserProvider>
+        <CodeEditorProvider>
           <FileProvider>
-            <CodeEditorProvider>
+            <ToastProvider>
               <App />
-            </CodeEditorProvider>
+            </ToastProvider>
           </FileProvider>
-        </UserProvider>
-      </BrowserRouter>
+        </CodeEditorProvider>
+      </UserProvider>
+    </BrowserRouter>
   </React.StrictMode>
 );
 
